@@ -26,7 +26,7 @@ public:
   SignalSpy(SignalF<void(Args...)>& signal)
     : _records()
   {
-    signal.connect(stranded([this](const Args&... args)
+    signal.connect(strand()->schedulerFor([this](const Args&... args)
     {
       this->recordCallback(args...);
     }));
@@ -39,7 +39,7 @@ public:
     object.connect(
           signalOrPropertyName,
           qi::AnyFunction::fromDynamicFunction(
-            stranded([this](qi::AnyReferenceVector anything)
+            strand()->schedulerFor([this](qi::AnyReferenceVector anything)
     {
       return this->recordAnyCallback(anything);
     })));
@@ -51,7 +51,7 @@ public:
 
   ~SignalSpy()
   {
-    joinTasks();
+    strand()->join();
   }
 
   /// A record data, corresponding to one signal emission.
@@ -69,30 +69,25 @@ public:
   };
 
   /// Retrieve all the records in one shot.
-  std::vector<Record> allRecords() const
+  std::vector<Record> allRecords()
   {
-    return async([this]
+    return strand()->async([this]
     { return _records;
     }).value();
   }
 
   /// Direct access to a record, by order of arrival.
-  Record record(size_t index) const
+  Record record(size_t index)
   {
-    qiLogDebug("qi.signalspy") << "Getting record #" << index << " "
-                               << (strand()->isInThisContext() ? "from strand" : "from outside");
-
-    return async([this, index]
-    {
-      qiLogDebug("qi.signalspy") << "Getting record #" << index;
-      return _records[index];
+    return strand()->async([this, index]
+    { return _records[index];
     }).value();
   }
 
   /// Direct access to last record.
-  Record lastRecord() const
+  Record lastRecord()
   {
-    return async([this]
+    return strand()->async([this]
     {
       assert(!_records.empty()); return _records.back();
     }).value();
@@ -101,11 +96,8 @@ public:
   /// The number of records.
   size_t recordCount() const
   {
-    qiLogDebug("qi.signalspy") << "Getting record count "
-                               << (strand()->isInThisContext() ? "from strand" : "from outside");
-    return async([this]
+    return strand()->async([this]
     {
-      qiLogDebug("qi.signalspy") << "Getting record count";
       return _records.size();
     }).value();
   }
@@ -113,14 +105,14 @@ public:
   QI_API_DEPRECATED_MSG(Use 'recordCount' instead)
   unsigned int getCounter() const
   {
-    return async([&]{ return static_cast<unsigned int>(_records.size()); }).value();
+    return strand()->async([&]{ return static_cast<unsigned int>(_records.size()); }).value();
   }
 
   /// Waits for the given number of records to be reached, before the given timeout.
   qi::FutureSync<bool> waitUntil(unsigned int nofRecords, const qi::Duration& timeout) const
   {
     qi::Promise<bool> waiting;
-    async([this, waiting, nofRecords, timeout]() mutable
+    strand()->async([this, waiting, nofRecords, timeout]() mutable
     {
       if(nofRecords <= _records.size())
       {
@@ -131,17 +123,18 @@ public:
       qi::SignalLink recordedSubscription;
 
       // track timeout
-      auto timingOut = asyncDelay([this, waiting, &recordedSubscription]() mutable
+      auto timingOut = strand()->asyncDelay([this, waiting, &recordedSubscription]() mutable
       {
         waiting.setValue(false);
         recorded.disconnect(recordedSubscription);
       }, timeout);
 
       // be called after signal emissions are recorded
-      recordedSubscription = recorded.connect(stranded(
+      recordedSubscription = recorded.connect(strand()->schedulerFor(
       [this, waiting, &recordedSubscription, timingOut, nofRecords]() mutable
       {
-        if (nofRecords <= _records.size())
+        assert(nofRecords <= _records.size());
+        if (nofRecords == _records.size())
         {
           waiting.setValue(true);
           timingOut.cancel();
