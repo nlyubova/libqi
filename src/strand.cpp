@@ -159,7 +159,6 @@ void StrandPrivate::process()
       {
         qiLogDebug() << "Queue empty, stopping";
         stopProcess(lock, true);
-        _processingThread = 0;
         return;
       }
       cbStruct = _queue.front();
