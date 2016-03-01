@@ -12,7 +12,6 @@
 #include <qi/detail/log.hxx>
 
 #include <qi/applicationsession.hpp>
-#include <qi/anymodule.hpp>
 #include <qicore/logmessage.hpp>
 #include <qicore/logmanager.hpp>
 #include <qicore/loglistener.hpp>
@@ -27,9 +26,9 @@ static void onMessage(const qi::LogMessage& msg)
 {
   std::stringstream ss;
   ss << qi::log::logLevelToString(static_cast<qi::LogLevel>(msg.level))
-     << " " << msg.category
-     << " " << msg.source
-     << " " << msg.message;
+      << " " << msg.category
+      << " " << msg.source
+      << " " << msg.message;
   std::cout << ss.str() << std::endl;
 }
 
