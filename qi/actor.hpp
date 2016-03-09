@@ -75,8 +75,6 @@ public:
     _strand.join();
   }
 
-private:
-  mutable qi::Strand _strand;
 };
 
 }
