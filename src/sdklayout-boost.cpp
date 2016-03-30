@@ -15,7 +15,7 @@
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/predef/os.h>
+//#include <boost/predef/os.h>
 #include <boost/regex.hpp>
 #include <boost/foreach.hpp>
 #include <locale>

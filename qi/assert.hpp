@@ -8,7 +8,7 @@
 #define _QI_ASSERT_HPP_
 
 
-#include <boost/predef/compiler.h>
+//#include <boost/predef/compiler.h>
 
 /* TODO:
     - add assertion variants (assert_if);

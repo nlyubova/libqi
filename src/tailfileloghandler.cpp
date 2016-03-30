@@ -7,7 +7,9 @@
 #include <qi/log/tailfileloghandler.hpp>
 
 #include <boost/function.hpp>
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/bind.hpp>
 
 #include <iomanip>
